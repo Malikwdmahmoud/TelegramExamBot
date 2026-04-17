@@ -1,3 +1,4 @@
+import os 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application,
@@ -17,7 +18,7 @@ from db import (
     get_exams,
 )
 
-TOKEN = "8174101819:AAGpHgTQkQExm19Nk1yf9DaehiQWNEZ8Hyo"
+TOKEN = os.getenv("TOKEN")
 
 
 # ---------------- START ----------------
