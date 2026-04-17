@@ -1,5 +1,3 @@
-import os 
-=======
 import os
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
@@ -187,12 +185,10 @@ def main():
     app.add_handler(MessageHandler(filters.Document.ALL | filters.PHOTO, handle_file))
 
     print("Bot is running...")
-     
-import os
 
-PORT = int(os.environ.get("PORT", 10000))
+    PORT = int(os.environ.get("PORT", 10000))
 
-app.run_webhook(
+    app.run_webhook(
     listen="0.0.0.0",
     port=PORT,
     url_path=TOKEN,
