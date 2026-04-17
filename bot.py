@@ -1,8 +1,6 @@
-<<<<<<< HEAD
 import os 
 =======
 import os
->>>>>>> 0be7668 (render)
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application,
