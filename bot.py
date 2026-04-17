@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import os 
+=======
+import os
+>>>>>>> 0be7668 (render)
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application,
@@ -185,8 +189,17 @@ def main():
     app.add_handler(MessageHandler(filters.Document.ALL | filters.PHOTO, handle_file))
 
     print("Bot is running...")
-    app.run_polling()
+     
+import os
 
+PORT = int(os.environ.get("PORT", 10000))
+
+app.run_webhook(
+    listen="0.0.0.0",
+    port=PORT,
+    url_path=TOKEN,
+    webhook_url=f"https://telegramexambot.onrender.com/{TOKEN}"
+)
 
 if __name__ == "__main__":
     main()
