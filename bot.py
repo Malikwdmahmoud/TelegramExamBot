@@ -91,7 +91,7 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ---------------- WEBHOOK APP ----------------
 def main():
     init_db()
-
+    print("bot is run")
     app = Application.builder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
