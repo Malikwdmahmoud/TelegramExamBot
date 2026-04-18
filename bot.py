@@ -155,41 +155,41 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "admin":
         user_id = query.from_user.id
 
-    if user_id not in ADMIN_IDS:
-        await query.answer("❌ غير مصرح", show_alert=True)
-        return
+        if user_id not in ADMIN_IDS:
+            await query.answer("❌ غير مصرح", show_alert=True)
+            return
 
-    keyboard = [
-        [InlineKeyboardButton("📋 عرض الامتحانات", callback_data="admin_list")],
-        [InlineKeyboardButton("🔎 فلترة حسب السنة", callback_data="admin_filter_year")],
-    ]
+        keyboard = [
+            [InlineKeyboardButton("📋 عرض الامتحانات", callback_data="admin_list")],
+            [InlineKeyboardButton("🔎 فلترة حسب السنة", callback_data="admin_filter_year")],
+        ]
 
-    await query.edit_message_text(
-        "🧑‍💻 لوحة التحكم:",
-        reply_markup=InlineKeyboardMarkup(keyboard),
-    )
+        await query.edit_message_text(
+            "🧑‍💻 لوحة التحكم:",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+        )
 
-     elif query.data.startswith("admin_exam_"):
-         exam_id = query.data.split("_")[2]
-         exams = context.user_data.get("admin_exams", {})
+    elif query.data.startswith("admin_exam_"):
+        exam_id = query.data.split("_")[2]
+        exams = context.user_data.get("admin_exams", {})
 
-         if exam_id not in exams:
+        if exam_id not in exams:
             await query.answer("❌ خطأ")
             return
 
-         exam = exams[exam_id]
+        exam = exams[exam_id]
 
-         keyboard = [
+        keyboard = [
             [InlineKeyboardButton("✏️ تعديل المادة", callback_data=f"edit_{exam_id}")],
             [InlineKeyboardButton("❌ حذف", callback_data=f"delete_{exam_id}")],
         ]
 
-    await query.edit_message_text(
-        f"📘 المستوى: {exam[1]}\n"
-        f"🏛️ القسم: {exam[2]}\n"
-        f"📚 المادة: {exam[3]}",
-        reply_markup=InlineKeyboardMarkup(keyboard),
-    )
+        await query.edit_message_text(
+            f"📘 المستوى: {exam[1]}\n"
+            f"🏛️ القسم: {exam[2]}\n"
+            f"📚 المادة: {exam[3]}",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+        )
 
     elif query.data.startswith("delete_"):
         exam_id = query.data.split("_")[1]
@@ -202,8 +202,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(
             "⚠️ هل أنت متأكد من الحذف؟",
             reply_markup=InlineKeyboardMarkup(keyboard),
-    )
-
+        )
 
     elif query.data.startswith("confirm_delete_"):
         exam_id = query.data.split("_")[2]
@@ -211,7 +210,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         delete_exam(exam_id)
 
         await query.edit_message_text("✅ تم حذف الامتحان بنجاح")
-    
+
     elif query.data.startswith("edit_"):
         exam_id = query.data.split("_")[1]
 
