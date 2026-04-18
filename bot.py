@@ -28,7 +28,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("📥 رفع امتحان", callback_data="upload")],
     [InlineKeyboardButton("📂 تصفح الامتحانات", callback_data="browse")],
 ]
-]
 
     await update.message.reply_text(
         "أهلاً 👋 اختر العملية:",
