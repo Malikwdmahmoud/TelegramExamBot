@@ -8,7 +8,7 @@ from telegram.ext import (
     ContextTypes,
     filters,
 )
-
+from db import init_db, insert_exam, get_exams
 from db import init_db, insert_exam
 
 # ---------------- CONFIG ----------------
@@ -26,7 +26,9 @@ if not RENDER_URL:
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("📥 رفع امتحان", callback_data="upload")],
-    ]
+    [InlineKeyboardButton("📂 تصفح الامتحانات", callback_data="browse")],
+]
+]
 
     await update.message.reply_text(
         "أهلاً 👋 اختر العملية:",
@@ -73,8 +75,64 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await query.edit_message_text(
             "📎 أرسل الملف الآن + اكتب اسم المادة في الوصف (caption)"
-        )
+   
+     )
+elif query.data == "browse":
+    years = [
+        [InlineKeyboardButton(f"المستوى {i}", callback_data=f"browse_year_{i}")]
+        for i in range(1, 6)
+    ]
 
+    await query.edit_message_text(
+        "📘 اختر المستوى:",
+        reply_markup=InlineKeyboardMarkup(years),
+    )
+elif query.data.startswith("browse_year_"):
+    year = query.data.split("_")[2]
+    context.user_data["browse_year"] = year
+
+    departments = [
+        [InlineKeyboardButton(f"قسم {i}", callback_data=f"browse_dep_{i}")]
+        for i in range(1, 7)
+    ]
+
+    await query.edit_message_text(
+        "🏛️ اختر القسم:",
+        reply_markup=InlineKeyboardMarkup(departments),
+    )
+elif query.data.startswith("browse_dep_"):
+    dep = query.data.split("_")[2]
+    year = context.user_data.get("browse_year")
+
+    exams = get_exams(year, dep)
+
+    if not exams:
+        await query.edit_message_text("❌ لا توجد امتحانات هنا")
+        return
+
+    buttons = [
+        [InlineKeyboardButton(subject, callback_data=f"exam_{exam_id}")]
+        for exam_id, subject, _ in exams
+    ]
+
+    context.user_data["exams"] = {str(e[0]): e for e in exams}
+
+    await query.edit_message_text(
+        "📚 اختر المادة:",
+        reply_markup=InlineKeyboardMarkup(buttons),
+    )
+
+elif query.data.startswith("exam_"):
+    exam_id = query.data.split("_")[1]
+    exams = context.user_data.get("exams", {})
+
+    if exam_id not in exams:
+        await query.answer("❌ خطأ")
+        return
+
+    _, subject, file_id = exams[exam_id]
+
+    await query.message.reply_document(file_id, caption=f"📚 {subject}")
 
 # ---------------- FILE HANDLER ----------------
 async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):

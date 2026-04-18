@@ -31,3 +31,16 @@ def insert_exam(year, department, subject, file_id):
 
     conn.commit()
     conn.close()
+
+def get_exams(year, department):
+    conn = sqlite3.connect(DB_NAME)
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT id, subject, file_id FROM exams
+    WHERE year=? AND department=?
+    """, (year, department))
+
+    rows = cur.fetchall()
+    conn.close()
+    return rows
