@@ -11,7 +11,15 @@ from telegram.ext import (
 
 from db import init_db, insert_exam
 
+# ---------------- CONFIG ----------------
 TOKEN = os.getenv("TOKEN")
+RENDER_URL = os.getenv("RENDER_URL")
+
+if not TOKEN:
+    raise ValueError("TOKEN is not set in environment variables")
+
+if not RENDER_URL:
+    raise ValueError("RENDER_URL is not set in environment variables")
 
 
 # ---------------- START ----------------
@@ -21,7 +29,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
 
     await update.message.reply_text(
-        "أهلاً 👋 اختر:",
+        "أهلاً 👋 اختر العملية:",
         reply_markup=InlineKeyboardMarkup(keyboard),
     )
 
@@ -31,17 +39,19 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
+    # اختيار رفع امتحان
     if query.data == "upload":
         years = [
-            [InlineKeyboardButton(f"السنة {i}", callback_data=f"year_{i}")]
+            [InlineKeyboardButton(f"المستوى {i}", callback_data=f"year_{i}")]
             for i in range(1, 6)
         ]
 
         await query.edit_message_text(
-            "📘 اختر السنة:",
+            "📘 اختر المستوى:",
             reply_markup=InlineKeyboardMarkup(years),
         )
 
+    # اختيار السنة
     elif query.data.startswith("year_"):
         year = query.data.split("_")[1]
         context.user_data["year"] = year
@@ -56,12 +66,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=InlineKeyboardMarkup(departments),
         )
 
+    # اختيار القسم
     elif query.data.startswith("dep_"):
         dep = query.data.split("_")[1]
         context.user_data["department"] = dep
 
         await query.edit_message_text(
-            "📎 أرسل الملف الآن + اكتب اسم المادة في caption"
+            "📎 أرسل الملف الآن + اكتب اسم المادة في الوصف (caption)"
         )
 
 
@@ -71,7 +82,15 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("ابدأ من /start 👈")
         return
 
-    file = update.message.document or update.message.photo[-1]
+    # حماية من الأخطاء
+    if update.message.document:
+        file = update.message.document
+    elif update.message.photo:
+        file = update.message.photo[-1]
+    else:
+        await update.message.reply_text("❌ أرسل ملف أو صورة فقط")
+        return
+
     file_id = file.file_id
 
     year = context.user_data.get("year")
@@ -81,31 +100,33 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
     insert_exam(year, dep, subject, file_id)
 
     await update.message.reply_text(
-        "✅ تم الحفظ بنجاح\n"
-        f"📘 السنة: {year}\n"
+        "✅ تم الحفظ بنجاح\n\n"
+        f"📘 المستوى: {year}\n"
         f"🏛️ القسم: {dep}\n"
         f"📚 المادة: {subject}"
     )
 
 
-# ---------------- WEBHOOK APP ----------------
+# ---------------- MAIN ----------------
 def main():
     init_db()
-    print("bot is run")
+
+    print("🚀 Bot is running...")
+
     app = Application.builder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.Document.ALL | filters.PHOTO, handle_file))
 
-    # 🔥 Webhook setup (Render compatible)
+    # 🔥 Webhook (Render)
     PORT = int(os.environ.get("PORT", 10000))
 
     app.run_webhook(
         listen="0.0.0.0",
         port=PORT,
         url_path=TOKEN,
-        webhook_url=f"https://telegramexambot.onrender.com/{TOKEN}",
+        webhook_url=f"{RENDER_URL}/{TOKEN}",
     )
 
 
