@@ -36,10 +36,15 @@ ADMIN_IDS = [int(x.strip()) for x in ADMIN_IDS.split(",") if x.strip()]
 
 # ---------------- START ----------------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+
     keyboard = [
         [InlineKeyboardButton("📥 رفع امتحان", callback_data="upload")],
         [InlineKeyboardButton("📂 تصفح الامتحانات", callback_data="browse")],
     ]
+
+    if user_id in ADMIN_IDS:
+        keyboard.append([InlineKeyboardButton("🧑‍💻 لوحة التحكم", callback_data="admin")])
 
     await update.message.reply_text(
         "مرحباً بطالب سكول العزيز 🌟\n"
@@ -146,13 +151,90 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         _, subject, file_id = exams[exam_id]
 
         await query.message.reply_document(file_id, caption=f"📚 {subject}")
+
+    elif query.data == "admin":
+    user_id = query.from_user.id
+
+    if user_id not in ADMIN_IDS:
+        await query.answer("❌ غير مصرح", show_alert=True)
+        return
+
+    keyboard = [
+        [InlineKeyboardButton("📋 عرض الامتحانات", callback_data="admin_list")],
+        [InlineKeyboardButton("🔎 فلترة حسب السنة", callback_data="admin_filter_year")],
+    ]
+
+    await query.edit_message_text(
+        "🧑‍💻 لوحة التحكم:",
+        reply_markup=InlineKeyboardMarkup(keyboard),
+    )
+
+    elif query.data.startswith("admin_exam_"):
+    exam_id = query.data.split("_")[2]
+    exams = context.user_data.get("admin_exams", {})
+
+    if exam_id not in exams:
+        await query.answer("❌ خطأ")
+        return
+
+    exam = exams[exam_id]
+
+    keyboard = [
+        [InlineKeyboardButton("✏️ تعديل المادة", callback_data=f"edit_{exam_id}")],
+        [InlineKeyboardButton("❌ حذف", callback_data=f"delete_{exam_id}")],
+    ]
+
+    await query.edit_message_text(
+        f"📘 المستوى: {exam[1]}\n"
+        f"🏛️ القسم: {exam[2]}\n"
+        f"📚 المادة: {exam[3]}",
+        reply_markup=InlineKeyboardMarkup(keyboard),
+    )
+
+    elif query.data.startswith("delete_"):
+    exam_id = query.data.split("_")[1]
+
+    keyboard = [
+        [InlineKeyboardButton("✅ نعم", callback_data=f"confirm_delete_{exam_id}")],
+        [InlineKeyboardButton("❌ لا", callback_data="admin_list")],
+    ]
+
+    await query.edit_message_text(
+        "⚠️ هل أنت متأكد من الحذف؟",
+        reply_markup=InlineKeyboardMarkup(keyboard),
+    )
+
+
+    elif query.data.startswith("confirm_delete_"):
+        exam_id = query.data.split("_")[2]
+
+        delete_exam(exam_id)
+
+        await query.edit_message_text("✅ تم حذف الامتحان بنجاح")
+    
+    elif query.data.startswith("edit_"):
+    exam_id = query.data.split("_")[1]
+
+    context.user_data["edit_exam_id"] = exam_id
+
+    await query.edit_message_text("✏️ أرسل الاسم الجديد للمادة:")
 # ---------------- FILE HANDLER ----------------
 async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # لازم المستخدم يبدأ رفع
     if "year" not in context.user_data:
         return
+    # ---------------- تعديل المادة ----------------
+    if "edit_exam_id" in context.user_data and update.message.text:
+        exam_id = context.user_data["edit_exam_id"]
+        new_subject = update.message.text
 
+        update_exam_subject(exam_id, new_subject)
+
+        context.user_data.pop("edit_exam_id", None)
+
+        await update.message.reply_text("✅ تم تعديل اسم المادة")
+        return
     # ---------------- استلام الملف ----------------
     if "pending_file" not in context.user_data:
 

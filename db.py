@@ -78,3 +78,16 @@ def delete_exam(exam_id):
     conn.commit()
     cur.close()
     conn.close()
+
+def update_exam_subject(exam_id, new_subject):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        "UPDATE exams SET subject=%s WHERE id=%s",
+        (new_subject, exam_id),
+    )
+
+    conn.commit()
+    cur.close()
+    conn.close()
