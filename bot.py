@@ -144,11 +144,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ---------------- FILE HANDLER ----------------
 async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-    # لو المستخدم في وضع رفع
+    # لازم المستخدم يبدأ رفع
     if "year" not in context.user_data:
         return
 
-    # لو لسه ما رفع ملف
+    # ---------------- استلام الملف ----------------
     if "pending_file" not in context.user_data:
 
         if update.message.document:
@@ -156,33 +156,36 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elif update.message.photo:
             file = update.message.photo[-1]
         else:
-            await update.message.reply_text("❌ أرسل ملف أو صورة فقط")
+            await update.message.reply_text("❌ أرسل ملف أولاً")
             return
 
         context.user_data["pending_file"] = file.file_id
 
-        await update.message.reply_text("📚 اكتب اسم المادة الآن:")
+        await update.message.reply_text("📚 الآن اكتب اسم المادة:")
         return
 
-    # المستخدم كتب اسم المادة
-    file_id = context.user_data["pending_file"]
-    subject = update.message.text
+    # ---------------- استلام اسم المادة ----------------
+    if update.message.text:
 
-    year = context.user_data.get("year")
-    dep = context.user_data.get("department")
+        file_id = context.user_data["pending_file"]
+        subject = update.message.text
 
-    insert_exam(year, dep, subject, file_id)
+        year = context.user_data.get("year")
+        dep = context.user_data.get("department")
 
-    # تنظيف الحالة
-    context.user_data.pop("pending_file", None)
+        insert_exam(year, dep, subject, file_id)
 
-    await update.message.reply_text(
-        "✅ تم الحفظ بنجاح\n\n"
-        f"📘 المستوى: {year}\n"
-        f"🏛️ القسم: {dep}\n"
-        f"📚 المادة: {subject}"
-    )
+        # تنظيف الحالة
+        context.user_data.pop("pending_file", None)
 
+        await update.message.reply_text(
+            "✅ تم حفظ الامتحان بنجاح 🎉\n\n"
+            f"📘 المستوى: {year}\n"
+            f"🏛️ القسم: {dep}\n"
+            f"📚 المادة: {subject}"
+        )
+
+        return
 # ---------------- MAIN ----------------
 def main():
     init_db()
@@ -193,7 +196,10 @@ def main():
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_handler))
-    app.add_handler(MessageHandler(filters.Document.ALL | filters.PHOTO, handle_file))
+    app.add_handler(MessageHandler(
+    (filters.Document.ALL | filters.PHOTO | filters.TEXT) & ~filters.COMMAND,
+    handle_file
+))
 
     # 🔥 Webhook (Render)
     PORT = int(os.environ.get("PORT", 10000))
