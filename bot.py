@@ -30,9 +30,15 @@ if not RENDER_URL:
 
 ADMIN_IDS = os.getenv("ADMIN_IDS", "")
 
-# تحويل النص إلى list أرقام
-ADMIN_IDS = [int(x.strip()) for x in ADMIN_IDS.split(",") if x.strip()]
+valid_ids = []
+for x in ADMIN_IDS.split(","):
+    x = x.strip()
+    if x.isdigit():
+        valid_ids.append(int(x))
+    else:
+        print(f"⚠️ تجاهل قيمة غير صالحة: {x}")
 
+ADMIN_IDS = valid_ids
 
 # ---------------- START ----------------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
