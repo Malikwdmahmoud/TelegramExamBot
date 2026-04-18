@@ -28,6 +28,11 @@ if not TOKEN:
 if not RENDER_URL:
     raise ValueError("RENDER_URL is not set in environment variables")
 
+ADMIN_IDS = os.getenv("ADMIN_IDS", "")
+
+# تحويل النص إلى list أرقام
+ADMIN_IDS = [int(x.strip()) for x in ADMIN_IDS.split(",") if x.strip()]
+
 
 # ---------------- START ----------------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
