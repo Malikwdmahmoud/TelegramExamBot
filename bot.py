@@ -59,6 +59,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("📥 رفع امتحان", callback_data="upload")],
         [InlineKeyboardButton("📂 تصفح الامتحانات", callback_data="browse")],
+        
     ]
 
     if user_id in ADMIN_IDS:
@@ -181,6 +182,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [
             [InlineKeyboardButton("📋 عرض الامتحانات", callback_data="admin_list")],
             [InlineKeyboardButton("🔎 فلترة حسب السنة", callback_data="admin_filter_year")],
+            [InlineKeyboardButton("📊 الإحصائيات", callback_data="admin_stats")],
+
         ]
 
         await query.edit_message_text(
@@ -214,7 +217,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         exam_id = query.data.split("_")[1]
 
         keyboard = [
-            [InlineKeyboardButton("✅ نعم", callback_data=f"confirm_delete_{exam_id}")],
+            [InlineKeyboardButton("✅ نعم", callback_data=f"delete_{exam_id}")],
             [InlineKeyboardButton("❌ لا", callback_data="admin_list")],
         ]
 
