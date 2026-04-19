@@ -18,7 +18,8 @@ def init_db():
         year TEXT,
         department TEXT,
         subject TEXT,
-        file_id TEXT
+        file_id TEXT,
+        file_type TEXT
     )
     """)
 
@@ -27,14 +28,14 @@ def init_db():
     conn.close()
 
 
-def insert_exam(year, department, subject, file_id):
+def insert_exam(year, department, subject, file_id, file_type):
     conn = get_connection()
     cur = conn.cursor()
 
     cur.execute("""
-    INSERT INTO exams (year, department, subject, file_id)
-    VALUES (%s, %s, %s, %s)
-    """, (year, department, subject, file_id))
+    INSERT INTO exams (year, department, subject, file_id, file_type)
+    VALUES (%s, %s, %s, %s, %s)
+    """, (year, department, subject, file_id, file_type))
 
     conn.commit()
     cur.close()
@@ -46,7 +47,7 @@ def get_exams(year, department):
     cur = conn.cursor()
 
     cur.execute("""
-    SELECT id, subject, file_id FROM exams
+    SELECT id, subject, file_id, file_type FROM exams
     WHERE year=%s AND department=%s
     """, (year, department))
 
@@ -63,7 +64,7 @@ def search_exams(keyword):
 
     pattern = f"%{keyword}%"
     cur.execute("""
-    SELECT id, year, department, subject, file_id FROM exams
+    SELECT id, year, department, subject, file_id, file_type FROM exams
     WHERE subject ILIKE %s OR department ILIKE %s OR year ILIKE %s
     """, (pattern, pattern, pattern))
 

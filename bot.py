@@ -125,7 +125,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
     elif query.data == "back_start":
-        for key in ["year", "department", "pending_file", "browse_year", "search_active", "search_results"]:
+        for key in ["year", "department", "pending_file", "browse_year", "search_active", "search_results", "file_type"]:
             context.user_data.pop(key, None)
 
         keyboard = [
@@ -159,6 +159,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif query.data == "back_upload_dep":
         context.user_data.pop("pending_file", None)
+        context.user_data.pop("file_type", None)
         year = context.user_data.get("year")
         departments = [
             [InlineKeyboardButton(name, callback_data=f"dep_{i}")]
@@ -258,7 +259,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         buttons = [
             [InlineKeyboardButton(subject, callback_data=f"exam_{exam_id}")]
-            for exam_id, subject, _ in exams
+            for exam_id, subject, _, _ in exams
         ]
         buttons.append([InlineKeyboardButton("⬅️ رجوع", callback_data="back_browse_year")])
 
@@ -277,13 +278,20 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.answer("❌ خطأ")
             return
 
-        _, subject, file_id = exams[exam_id]
+        _, subject, file_id, file_type = exams[exam_id]
 
-        await context.bot.send_document(
-            chat_id=query.message.chat_id,
-            document=file_id,
-            caption=f"📚 {subject}"
-        )
+        if file_type == 'photo':
+            await context.bot.send_photo(
+                chat_id=query.message.chat_id,
+                photo=file_id,
+                caption=f"📚 {subject}"
+            )
+        else:
+            await context.bot.send_document(
+                chat_id=query.message.chat_id,
+                document=file_id,
+                caption=f"📚 {subject}"
+            )
 
     elif query.data.startswith("search_exam_"):
         exam_id = query.data.split("_")[2]
@@ -293,12 +301,19 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.answer("❌ خطأ")
             return
 
-        _, year, department, subject, file_id = exams[exam_id]
-        await context.bot.send_document(
-            chat_id=query.message.chat_id,
-            document=file_id,
-            caption=f"📚 {subject} \n📘 المستوى: {year} \n🏛️ القسم: {department}"
-        )
+        _, year, department, subject, file_id, file_type = exams[exam_id]
+        if file_type == 'photo':
+            await context.bot.send_photo(
+                chat_id=query.message.chat_id,
+                photo=file_id,
+                caption=f"📚 {subject} \n📘 المستوى: {year} \n🏛️ القسم: {department}"
+            )
+        else:
+            await context.bot.send_document(
+                chat_id=query.message.chat_id,
+                document=file_id,
+                caption=f"📚 {subject} \n📘 المستوى: {year} \n🏛️ القسم: {department}"
+            )
 
     elif query.data == "admin":
         user_id = query.from_user.id
@@ -426,7 +441,7 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         buttons = [
             [InlineKeyboardButton(f"{year} | {department} | {subject}", callback_data=f"search_exam_{exam_id}")]
-            for exam_id, year, department, subject, _ in exams[:20]
+            for exam_id, year, department, subject, _, _ in exams[:20]
         ]
 
         context.user_data["search_results"] = {str(e[0]): e for e in exams}
@@ -457,13 +472,16 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if update.message.document:
             file = update.message.document
+            file_type = 'document'
         elif update.message.photo:
             file = update.message.photo[-1]
+            file_type = 'photo'
         else:
             await update.message.reply_text("❌ أرسل ملف أولاً")
             return
 
         context.user_data["pending_file"] = file.file_id
+        context.user_data["file_type"] = file_type
 
         await update.message.reply_text(
             "📚 الآن اكتب اسم المادة:",
@@ -477,15 +495,17 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.text:
 
         file_id = context.user_data["pending_file"]
+        file_type = context.user_data["file_type"]
         subject = update.message.text
 
         year = context.user_data.get("year")
         dep = context.user_data.get("department")
 
-        insert_exam(year, dep, subject, file_id)
+        insert_exam(year, dep, subject, file_id, file_type)
 
         # تنظيف الحالة
         context.user_data.pop("pending_file", None)
+        context.user_data.pop("file_type", None)
 
         await update.message.reply_text(
             "✅ تم حفظ الامتحان بنجاح 🎉\n\n"
