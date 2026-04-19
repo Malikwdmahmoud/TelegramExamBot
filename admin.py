@@ -37,6 +37,7 @@ async def admin_panel(update, context):
         [InlineKeyboardButton("📋 عرض الامتحانات", callback_data="admin_list")],
         [InlineKeyboardButton("📘 فلترة حسب السنة", callback_data="admin_filter_year")],
         [InlineKeyboardButton("📊 الإحصائيات", callback_data="admin_stats")],
+        [InlineKeyboardButton("⬅️ رجوع", callback_data="back_start")],
     ]
 
     await query.edit_message_text(
@@ -64,6 +65,7 @@ async def admin_list(update, context):
         ]
         for e in exams[:20]
     ]
+    buttons.append([InlineKeyboardButton("⬅️ رجوع", callback_data="back_admin")])
 
     context.user_data["admin_exams"] = {str(e[0]): e for e in exams}
 
@@ -89,6 +91,7 @@ async def admin_exam(update, context):
     keyboard = [
         [InlineKeyboardButton("✏️ تعديل المادة", callback_data=f"edit_{exam_id}")],
         [InlineKeyboardButton("❌ حذف", callback_data=f"delete_{exam_id}")],
+        [InlineKeyboardButton("⬅️ رجوع", callback_data="admin_list")],
     ]
 
     await query.edit_message_text(
@@ -108,7 +111,7 @@ async def delete_confirm(update, context):
 
     keyboard = [
         [InlineKeyboardButton("✅ نعم", callback_data=f"confirm_delete_{exam_id}")],
-        [InlineKeyboardButton("❌ لا", callback_data="admin_list")],
+        [InlineKeyboardButton("❌ لا", callback_data=f"admin_exam_{exam_id}")],
     ]
 
     await query.edit_message_text(
@@ -134,7 +137,14 @@ async def edit_start(update, context):
 
     context.user_data["edit_exam_id"] = exam_id
 
-    await query.edit_message_text("✏️ أرسل الاسم الجديد للمادة:")
+    keyboard = [
+        [InlineKeyboardButton("⬅️ رجوع", callback_data=f"admin_exam_{exam_id}")],
+    ]
+
+    await query.edit_message_text(
+        "✏️ أرسل الاسم الجديد للمادة:",
+        reply_markup=InlineKeyboardMarkup(keyboard),
+    )
 
 
 async def edit_save(update, context):

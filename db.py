@@ -57,6 +57,23 @@ def get_exams(year, department):
     return rows
 
 
+def search_exams(keyword):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    pattern = f"%{keyword}%"
+    cur.execute("""
+    SELECT id, year, department, subject, file_id FROM exams
+    WHERE subject ILIKE %s OR department ILIKE %s OR year ILIKE %s
+    """, (pattern, pattern, pattern))
+
+    rows = cur.fetchall()
+
+    cur.close()
+    conn.close()
+    return rows
+
+
 def get_all_exams():
     conn = get_connection()
     cur = conn.cursor()

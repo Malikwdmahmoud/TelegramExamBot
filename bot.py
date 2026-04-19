@@ -20,7 +20,7 @@ from telegram.ext import (
     ContextTypes,
     filters,
 )
-from db import get_exams_by_year, init_db, insert_exam, get_exams, delete_exam, update_exam_subject
+from db import get_exams_by_year, init_db, insert_exam, get_exams, search_exams, delete_exam, update_exam_subject
 DEPARTMENTS = [
     "علوم الحاسوب",
     "تقانة المعلومات",
@@ -58,7 +58,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("📥 رفع امتحان", callback_data="upload")],
         [InlineKeyboardButton("📂 تصفح الامتحانات", callback_data="browse")],
-        
+        [InlineKeyboardButton("🔎 بحث عن امتحان", callback_data="search")],
     ]
 
     if user_id in ADMIN_IDS:
@@ -81,6 +81,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton(f"المستوى {i}", callback_data=f"year_{i}")]
             for i in range(1, 6)
         ]
+        years.append([InlineKeyboardButton("⬅️ رجوع", callback_data="back_start")])
 
         await query.edit_message_text(
             "📘 اختر المستوى:",
@@ -95,6 +96,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton(name, callback_data=f"dep_{i}")]
             for i, name in enumerate(DEPARTMENTS)
         ]
+        departments.append([InlineKeyboardButton("⬅️ رجوع", callback_data="back_start")])
 
         await query.edit_message_text(
             "🏛️ اختر القسم:",
@@ -106,16 +108,122 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data["department"] = DEPARTMENTS[dep_index]
 
         await query.edit_message_text(
-            "📎 أرسل الملف الآن"
+            "📎 أرسل الملف الآن",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("⬅️ رجوع", callback_data="back_upload_year")]
+            ]),
         )
     elif query.data == "admin_stats":
         await admin_stats(update, context)
+    elif query.data == "search":
+        context.user_data["search_active"] = True
+        await query.edit_message_text(
+            "🔎 اكتب اسم المادة أو كلمة مفتاحية للبحث:",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("⬅️ رجوع", callback_data="back_start")]
+            ]),
+        )
+
+    elif query.data == "back_start":
+        for key in ["year", "department", "pending_file", "browse_year", "search_active", "search_results"]:
+            context.user_data.pop(key, None)
+
+        keyboard = [
+            [InlineKeyboardButton("📥 رفع امتحان", callback_data="upload")],
+            [InlineKeyboardButton("📂 تصفح الامتحانات", callback_data="browse")],
+            [InlineKeyboardButton("🔎 بحث عن امتحان", callback_data="search")],
+        ]
+        if query.from_user.id in ADMIN_IDS:
+            keyboard.append([InlineKeyboardButton("🧑‍💻 لوحة التحكم", callback_data="admin")])
+
+        await query.edit_message_text(
+            "مرحباً بطالب سكول العزيز 🌟\n"
+            "نسأل الله لك دوام التوفيق 🤲\n\n"
+            "اختر ما يناسبك:",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+        )
+
+    elif query.data == "back_upload_year":
+        context.user_data.pop("department", None)
+        context.user_data.pop("pending_file", None)
+        years = [
+            [InlineKeyboardButton(f"المستوى {i}", callback_data=f"year_{i}")]
+            for i in range(1, 6)
+        ]
+        years.append([InlineKeyboardButton("⬅️ رجوع", callback_data="back_start")])
+
+        await query.edit_message_text(
+            "📘 اختر المستوى:",
+            reply_markup=InlineKeyboardMarkup(years),
+        )
+
+    elif query.data == "back_upload_dep":
+        context.user_data.pop("pending_file", None)
+        year = context.user_data.get("year")
+        departments = [
+            [InlineKeyboardButton(name, callback_data=f"dep_{i}")]
+            for i, name in enumerate(DEPARTMENTS)
+        ]
+        departments.append([InlineKeyboardButton("⬅️ رجوع", callback_data="back_upload_year")])
+
+        await query.edit_message_text(
+            "🏛️ اختر القسم:",
+            reply_markup=InlineKeyboardMarkup(departments),
+        )
+
+    elif query.data == "back_browse":
+        years = [
+            [InlineKeyboardButton(f"المستوى {i}", callback_data=f"browse_year_{i}")]
+            for i in range(1, 6)
+        ]
+        years.append([InlineKeyboardButton("⬅️ رجوع", callback_data="back_start")])
+
+        await query.edit_message_text(
+            "📘 اختر المستوى:",
+            reply_markup=InlineKeyboardMarkup(years),
+        )
+
+    elif query.data == "back_browse_year":
+        year = context.user_data.get("browse_year")
+        departments = [
+            [InlineKeyboardButton(name, callback_data=f"browse_dep_{i}")]
+            for i, name in enumerate(DEPARTMENTS)
+        ]
+        departments.append([InlineKeyboardButton("⬅️ رجوع", callback_data="back_browse")])
+
+        await query.edit_message_text(
+            "🏛️ اختر القسم:",
+            reply_markup=InlineKeyboardMarkup(departments),
+        )
+
+    elif query.data == "back_search":
+        context.user_data["search_active"] = True
+        await query.edit_message_text(
+            "🔎 اكتب اسم المادة أو كلمة مفتاحية للبحث:",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("⬅️ رجوع", callback_data="back_start")]
+            ]),
+        )
+
+    elif query.data == "back_admin":
+        keyboard = [
+            [InlineKeyboardButton("📋 عرض الامتحانات", callback_data="admin_list")],
+            [InlineKeyboardButton("🔎 فلترة حسب السنة", callback_data="admin_filter_year")],
+            [InlineKeyboardButton("📊 الإحصائيات", callback_data="admin_stats")],
+            [InlineKeyboardButton("⬅️ رجوع", callback_data="back_start")],
+        ]
+
+        await query.edit_message_text(
+            "🧑‍💻 لوحة التحكم:",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+        )
     # ---------------- التصفح ----------------
     elif query.data == "browse":
         years = [
             [InlineKeyboardButton(f"المستوى {i}", callback_data=f"browse_year_{i}")]
             for i in range(1, 6)
         ]
+        years.append([InlineKeyboardButton("⬅️ رجوع", callback_data="back_start")])
 
         await query.edit_message_text(
             "📘 اختر المستوى:",
@@ -130,6 +238,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton(name, callback_data=f"browse_dep_{i}")]
             for i, name in enumerate(DEPARTMENTS)
         ]
+        departments.append([InlineKeyboardButton("⬅️ رجوع", callback_data="back_browse")])
 
         await query.edit_message_text(
             "🏛️ اختر القسم:",
@@ -151,6 +260,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton(subject, callback_data=f"exam_{exam_id}")]
             for exam_id, subject, _ in exams
         ]
+        buttons.append([InlineKeyboardButton("⬅️ رجوع", callback_data="back_browse_year")])
 
         context.user_data["exams"] = {str(e[0]): e for e in exams}
 
@@ -171,6 +281,17 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await query.message.reply_document(file_id, caption=f"📚 {subject}")
 
+    elif query.data.startswith("search_exam_"):
+        exam_id = query.data.split("_")[2]
+        exams = context.user_data.get("search_results", {})
+
+        if exam_id not in exams:
+            await query.answer("❌ خطأ")
+            return
+
+        _, year, department, subject, file_id = exams[exam_id]
+        await query.message.reply_document(file_id, caption=f"📚 {subject} \n📘 المستوى: {year} \n🏛️ القسم: {department}")
+
     elif query.data == "admin":
         user_id = query.from_user.id
 
@@ -182,7 +303,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("📋 عرض الامتحانات", callback_data="admin_list")],
             [InlineKeyboardButton("🔎 فلترة حسب السنة", callback_data="admin_filter_year")],
             [InlineKeyboardButton("📊 الإحصائيات", callback_data="admin_stats")],
-
+            [InlineKeyboardButton("⬅️ رجوع", callback_data="back_start")],
         ]
 
         await query.edit_message_text(
@@ -203,6 +324,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [
             [InlineKeyboardButton("✏️ تعديل المادة", callback_data=f"edit_{exam_id}")],
             [InlineKeyboardButton("❌ حذف", callback_data=f"delete_{exam_id}")],
+            [InlineKeyboardButton("⬅️ رجوع", callback_data="admin_list")],
         ]
 
         await query.edit_message_text(
@@ -237,7 +359,12 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         context.user_data["edit_exam_id"] = exam_id
 
-        await query.edit_message_text("✏️ أرسل الاسم الجديد للمادة:")
+        await query.edit_message_text(
+            "✏️ أرسل الاسم الجديد للمادة:",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("⬅️ رجوع", callback_data=f"admin_exam_{exam_id}")]
+            ]),
+        )
 
     elif query.data == "admin":
         await admin_panel(update, context)
@@ -260,12 +387,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [
             [InlineKeyboardButton(f"المستوى {i}", callback_data=f"admin_year_{i}")]
             for i in range(1, 6)
-    ]
+        ]
+        keyboard.append([InlineKeyboardButton("⬅️ رجوع", callback_data="back_admin")])
 
         await query.edit_message_text(
             "📘 اختر السنة:",
             reply_markup=InlineKeyboardMarkup(keyboard),
-    )
+        )
         
     elif query.data.startswith("admin_year_"):
         year = query.data.split("_")[2]
@@ -292,6 +420,34 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # admin edit
     await edit_save(update, context)
     # لازم المستخدم يبدأ رفع
+    if "search_active" in context.user_data and update.message.text:
+        keyword = update.message.text.strip()
+        if not keyword:
+            await update.message.reply_text("❌ اكتب كلمة بحث صحيحة.")
+            return
+
+        exams = search_exams(keyword)
+        context.user_data.pop("search_active", None)
+
+        if not exams:
+            await update.message.reply_text("❌ لم يتم العثور على نتائج.")
+            return
+
+        buttons = [
+            [InlineKeyboardButton(f"{year} | {department} | {subject}", callback_data=f"search_exam_{exam_id}")]
+            for exam_id, year, department, subject, _ in exams[:20]
+        ]
+
+        context.user_data["search_results"] = {str(e[0]): e for e in exams}
+
+        buttons.append([InlineKeyboardButton("⬅️ رجوع", callback_data="back_search")])
+
+        await update.message.reply_text(
+            "🔎 نتائج البحث:",
+            reply_markup=InlineKeyboardMarkup(buttons),
+        )
+        return
+
     if "year" not in context.user_data:
         return
     # ---------------- تعديل المادة ----------------
@@ -318,7 +474,12 @@ async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         context.user_data["pending_file"] = file.file_id
 
-        await update.message.reply_text("📚 الآن اكتب اسم المادة:")
+        await update.message.reply_text(
+            "📚 الآن اكتب اسم المادة:",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("⬅️ رجوع", callback_data="back_upload_dep")]
+            ]),
+        )
         return
 
     # ---------------- استلام اسم المادة ----------------
