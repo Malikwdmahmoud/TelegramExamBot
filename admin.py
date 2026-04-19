@@ -102,6 +102,8 @@ async def admin_exam(update, context):
 # ---------------- تأكيد الحذف ----------------
 async def delete_confirm(update, context):
     query = update.callback_query
+    await query.answer()
+
     exam_id = query.data.split("_")[1]
 
     keyboard = [
@@ -117,12 +119,13 @@ async def delete_confirm(update, context):
 
 async def delete_final(update, context):
     query = update.callback_query
-    exam_id = query.data.split("_")[2]
+    await query.answer()
+
+    exam_id = query.data.replace("confirm_delete_", "")
 
     delete_exam(exam_id)
 
     await query.edit_message_text("✅ تم حذف الامتحان")
-
 
 # ---------------- تعديل المادة ----------------
 async def edit_start(update, context):

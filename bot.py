@@ -20,8 +20,7 @@ from telegram.ext import (
     ContextTypes,
     filters,
 )
-from db import get_exams_by_year, init_db, insert_exam, get_exams
-from db import init_db, insert_exam
+from db import get_exams_by_year, init_db, insert_exam, get_exams, delete_exam, update_exam_subject
 DEPARTMENTS = [
     "علوم الحاسوب",
     "تقانة المعلومات",
