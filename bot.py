@@ -1,6 +1,6 @@
 from multiprocessing import context
 import os
-from turtle import update
+from telegram import Update
 from admin import (
     admin_panel,
     admin_list,
