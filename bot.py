@@ -1,4 +1,15 @@
+from multiprocessing import context
 import os
+from turtle import update
+from admin import (
+    admin_panel,
+    admin_list,
+    admin_exam,
+    delete_confirm,
+    delete_final,
+    edit_start,
+    edit_save,
+)
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application,
@@ -223,9 +234,28 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data["edit_exam_id"] = exam_id
 
         await query.edit_message_text("✏️ أرسل الاسم الجديد للمادة:")
+
+    elif query.data == "admin":
+        await admin_panel(update, context)
+
+    elif query.data == "admin_list":
+        await admin_list(update, context)
+
+    elif query.data.startswith("admin_exam_"):
+        await admin_exam(update, context)
+
+    elif query.data.startswith("delete_"):
+        await delete_confirm(update, context)
+
+    elif query.data.startswith("confirm_delete_"):
+        await delete_final(update, context)
+
+    elif query.data.startswith("edit_"):
+        await edit_start(update, context)
 # ---------------- FILE HANDLER ----------------
 async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
+    # admin edit
+    await edit_save(update, context)
     # لازم المستخدم يبدأ رفع
     if "year" not in context.user_data:
         return
