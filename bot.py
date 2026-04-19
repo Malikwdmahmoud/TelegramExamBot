@@ -5,6 +5,7 @@ from admin import (
     admin_panel,
     admin_list,
     admin_exam,
+    admin_stats,
     delete_confirm,
     delete_final,
     edit_start,
@@ -19,7 +20,7 @@ from telegram.ext import (
     ContextTypes,
     filters,
 )
-from db import init_db, insert_exam, get_exams
+from db import get_exams_by_year, init_db, insert_exam, get_exams
 from db import init_db, insert_exam
 DEPARTMENTS = [
     "علوم الحاسوب",
@@ -107,7 +108,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(
             "📎 أرسل الملف الآن"
         )
-
+    elif query.data == "admin_stats":
+        await admin_stats(update, context)
     # ---------------- التصفح ----------------
     elif query.data == "browse":
         years = [
@@ -252,6 +254,37 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif query.data.startswith("edit_"):
         await edit_start(update, context)
+    elif query.data == "admin_filter_year":
+        keyboard = [
+            [InlineKeyboardButton(f"المستوى {i}", callback_data=f"admin_year_{i}")]
+            for i in range(1, 6)
+    ]
+
+        await query.edit_message_text(
+            "📘 اختر السنة:",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+    )
+        
+    elif query.data.startswith("admin_year_"):
+        year = query.data.split("_")[2]
+
+        exams = get_exams_by_year(year)
+
+        if not exams:
+            await query.edit_message_text("❌ لا توجد بيانات")
+            return
+
+        buttons = [
+            [InlineKeyboardButton(f"{e[3]}", callback_data=f"admin_exam_{e[0]}")]
+            for e in exams
+    ]
+
+        context.user_data["admin_exams"] = {str(e[0]): e for e in exams}
+
+        await query.edit_message_text(  
+            f"📘 امتحانات المستوى {year}:",
+            reply_markup=InlineKeyboardMarkup(buttons),
+    )
 # ---------------- FILE HANDLER ----------------
 async def handle_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # admin edit

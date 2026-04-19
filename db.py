@@ -91,3 +91,33 @@ def update_exam_subject(exam_id, new_subject):
     conn.commit()
     cur.close()
     conn.close()
+
+def get_exams_by_year(year):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("SELECT * FROM exams WHERE year=%s", (year,))
+    rows = cur.fetchall()
+
+    cur.close()
+    conn.close()
+    return rows
+
+
+def get_stats():
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("SELECT COUNT(*) FROM exams")
+    total_exams = cur.fetchone()[0]
+
+    cur.execute("SELECT COUNT(DISTINCT department) FROM exams")
+    departments = cur.fetchone()[0]
+
+    cur.execute("SELECT COUNT(DISTINCT year) FROM exams")
+    years = cur.fetchone()[0]
+
+    cur.close()
+    conn.close()
+
+    return total_exams, departments, years

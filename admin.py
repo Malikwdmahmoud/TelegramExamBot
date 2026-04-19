@@ -2,7 +2,19 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from db import get_all_exams, delete_exam, update_exam_subject
 
 import os
+from db import get_stats
 
+async def admin_stats(update, context):
+    query = update.callback_query
+
+    total, deps, years = get_stats()
+
+    await query.edit_message_text(
+        "📊 إحصائيات البوت:\n\n"
+        f"📚 عدد الامتحانات: {total}\n"
+        f"🏛️ عدد الأقسام: {deps}\n"
+        f"📘 عدد المستويات: {years}"
+    )
 # قراءة الأدمن من env
 ADMIN_IDS = os.getenv("ADMIN_IDS", "")
 ADMIN_IDS = [int(x.strip()) for x in ADMIN_IDS.split(",") if x.strip().isdigit()]
@@ -23,6 +35,8 @@ async def admin_panel(update, context):
 
     keyboard = [
         [InlineKeyboardButton("📋 عرض الامتحانات", callback_data="admin_list")],
+        [InlineKeyboardButton("📘 فلترة حسب السنة", callback_data="admin_filter_year")],
+        [InlineKeyboardButton("📊 الإحصائيات", callback_data="admin_stats")],
     ]
 
     await query.edit_message_text(
