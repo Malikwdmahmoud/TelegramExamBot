@@ -374,23 +374,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             ]),
         )
 
-    elif query.data == "admin":
-        await admin_panel(update, context)
-
-    elif query.data == "admin_list":
-        await admin_list(update, context)
-
-    elif query.data.startswith("admin_exam_"):
-        await admin_exam(update, context)
-
-    elif query.data.startswith("delete_"):
-        await delete_confirm(update, context)
-
-    elif query.data.startswith("confirm_delete_"):
-        await delete_final(update, context)
-
-    elif query.data.startswith("edit_"):
-        await edit_start(update, context)
     elif query.data == "admin_filter_year":
         keyboard = [
             [InlineKeyboardButton(f"المستوى {i}", callback_data=f"admin_year_{i}")]
