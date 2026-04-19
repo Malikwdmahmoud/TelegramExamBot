@@ -279,7 +279,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         _, subject, file_id = exams[exam_id]
 
-        await query.message.reply_document(file_id, caption=f"📚 {subject}")
+        await context.bot.send_document(
+            chat_id=query.message.chat_id,
+            document=file_id,
+            caption=f"📚 {subject}"
+        )
 
     elif query.data.startswith("search_exam_"):
         exam_id = query.data.split("_")[2]
@@ -290,7 +294,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         _, year, department, subject, file_id = exams[exam_id]
-        await query.message.reply_document(file_id, caption=f"📚 {subject} \n📘 المستوى: {year} \n🏛️ القسم: {department}")
+        await context.bot.send_document(
+            chat_id=query.message.chat_id,
+            document=file_id,
+            caption=f"📚 {subject} \n📘 المستوى: {year} \n🏛️ القسم: {department}"
+        )
 
     elif query.data == "admin":
         user_id = query.from_user.id
