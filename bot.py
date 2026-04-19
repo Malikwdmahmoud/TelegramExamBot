@@ -282,13 +282,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if file_type == 'photo':
             await context.bot.send_photo(
-                chat_id=query.message.chat_id,
+                chat_id=update.effective_chat.id,
                 photo=file_id,
                 caption=f"📚 {subject}"
             )
         else:
             await context.bot.send_document(
-                chat_id=query.message.chat_id,
+                chat_id=update.effective_chat.id,
                 document=file_id,
                 caption=f"📚 {subject}"
             )
@@ -304,13 +304,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         _, year, department, subject, file_id, file_type = exams[exam_id]
         if file_type == 'photo':
             await context.bot.send_photo(
-                chat_id=query.message.chat_id,
+                chat_id=update.effective_chat.id,
                 photo=file_id,
                 caption=f"📚 {subject} \n📘 المستوى: {year} \n🏛️ القسم: {department}"
             )
         else:
             await context.bot.send_document(
-                chat_id=query.message.chat_id,
+                chat_id=update.effective_chat.id,
                 document=file_id,
                 caption=f"📚 {subject} \n📘 المستوى: {year} \n🏛️ القسم: {department}"
             )
