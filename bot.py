@@ -217,7 +217,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         exam_id = query.data.split("_")[1]
 
         keyboard = [
-            [InlineKeyboardButton("✅ نعم", callback_data=f"delete_{exam_id}")],
+            [InlineKeyboardButton("✅ نعم", callback_data=f"confirm_delete_{exam_id}")],
             [InlineKeyboardButton("❌ لا", callback_data="admin_list")],
         ]
 
